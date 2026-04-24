@@ -99,6 +99,28 @@ def walk_wiki(root: Path) -> list[dict]:
     return pages
 
 
+def check_orphans(pages, wiki_root):
+    inbound = defaultdict(int)
+    for p in pages:
+        for target in p["links"]:
+            target_clean = target.split("#", 1)[0]
+            if not target_clean:
+                continue
+            resolved = (p["path"].parent / target_clean).resolve()
+            inbound[resolved] += 1
+    defects = []
+    for p in pages:
+        if inbound[p["path"].resolve()] == 0:
+            defects.append({
+                "check": "orphan",
+                "severity": "warn",
+                "page": p["rel"],
+                "message": "no inbound markdown links",
+                "data": {},
+            })
+    return defects
+
+
 REQUIRED_KEYS = ("id", "title", "type", "created", "updated", "status")
 TYPE_PER_FOLDER = {"refs": "ref", "topics": "topic", "overviews": "overview"}
 
@@ -223,6 +245,8 @@ def main() -> int:
         all_defects.extend(check_duplicate_ids(pages))
     if enabled("frontmatter-violation"):
         all_defects.extend(check_frontmatter(pages))
+    if enabled("orphan"):
+        all_defects.extend(check_orphans(pages, args.wiki_root))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1

@@ -157,6 +157,27 @@ def test_extract_footnotes_ignores_definitions():
     assert refs == ["foo"], f"expected ['foo'], got {refs!r}"
 
 
+def test_orphan_detected():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "lonely.md").write_text(
+            "---\nid: lonely\ntitle: Lonely\ntype: topic\n"
+            "created: 2026-01-01\nupdated: 2026-01-01\nstatus: draft\n"
+            "---\nsee [^ref1].\n[^ref1]: see refs/ref1.md"
+        )
+        (wiki / "refs" / "ref1.md").write_text(
+            "---\nid: ref1\ntitle: R\ntype: ref\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nsources: [https://x]\nstatus: stable\n---\nbody"
+        )
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        orphans = [d for d in out["defects"] if d["check"] == "orphan"]
+        # lonely.md has no inbound links -> orphan
+        assert any("lonely" in o["page"] for o in orphans)
+
+
 def test_frontmatter_missing_required_keys():
     with tempfile.TemporaryDirectory() as d:
         wiki = Path(d)
