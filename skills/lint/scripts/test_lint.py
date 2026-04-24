@@ -251,6 +251,30 @@ def test_broken_link_detected():
         assert out["summary"]["broken-link"] == 1
 
 
+def test_overview_underlinked():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "overviews" / "o.md").write_text(
+            "---\nid: o\ntitle: O\ntype: overview\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nstatus: draft\n---\n"
+            "Only two links: [a](../topics/a.md) and [b](../topics/b.md)[^r]."
+            "\n[^r]: see refs/r.md"
+        )
+        (wiki / "topics" / "a.md").write_text(
+            "---\nid: a\ntitle: A\ntype: topic\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nstatus: draft\n---\nbody[^r]\n[^r]: see"
+        )
+        (wiki / "topics" / "b.md").write_text(
+            "---\nid: b\ntitle: B\ntype: topic\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nstatus: draft\n---\nbody[^r]\n[^r]: see"
+        )
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        assert out["summary"]["overview-underlinked"] == 1
+
+
 def test_missing_citation_in_topic():
     with tempfile.TemporaryDirectory() as d:
         wiki = Path(d)

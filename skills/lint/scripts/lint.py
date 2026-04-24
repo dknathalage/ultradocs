@@ -208,6 +208,27 @@ def check_broken_links(pages, wiki_root):
     return defects
 
 
+def check_overview_underlinked(pages):
+    defects = []
+    for p in pages:
+        if p["folder"] != "overviews":
+            continue
+        distinct = set()
+        for target in p["links"]:
+            t = target.split("#", 1)[0]
+            if t:
+                distinct.add(t)
+        if len(distinct) < 3:
+            defects.append({
+                "check": "overview-underlinked",
+                "severity": "warn",
+                "page": p["rel"],
+                "message": f"links {len(distinct)} distinct page(s); overview must link ≥3",
+                "data": {"count": len(distinct)},
+            })
+    return defects
+
+
 def check_missing_citations(pages):
     defects = []
     for p in pages:
@@ -274,6 +295,8 @@ def main() -> int:
         all_defects.extend(check_orphans(pages, args.wiki_root))
     if enabled("missing-citation"):
         all_defects.extend(check_missing_citations(pages))
+    if enabled("overview-underlinked"):
+        all_defects.extend(check_overview_underlinked(pages))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1
