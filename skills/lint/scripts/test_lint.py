@@ -251,6 +251,22 @@ def test_broken_link_detected():
         assert out["summary"]["broken-link"] == 1
 
 
+def test_missing_citation_in_topic():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text(
+            "---\nid: a\ntitle: A\ntype: topic\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nstatus: draft\n---\n"
+            "This paragraph makes a claim but has no citation.\n\n"
+            "Another paragraph still without a citation."
+        )
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        assert out["summary"]["missing-citation"] >= 1
+
+
 # ---------------------------------------------------------------------------
 # unittest discovery shim — wraps all module-level test_* functions
 # ---------------------------------------------------------------------------

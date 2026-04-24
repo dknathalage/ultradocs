@@ -208,6 +208,31 @@ def check_broken_links(pages, wiki_root):
     return defects
 
 
+def check_missing_citations(pages):
+    defects = []
+    for p in pages:
+        if p["folder"] not in ("topics", "overviews"):
+            continue
+        # Split body on blank lines; skip footnote definitions and headings.
+        paragraphs = [
+            para for para in re.split(r"\n\s*\n", p["body"])
+            if para.strip()
+               and not para.lstrip().startswith("#")
+               and not re.match(r"^\s*\[\^[\w-]+\]:", para)
+        ]
+        offenders = [para for para in paragraphs
+                     if not _FOOTNOTE_REF_RE.search(para)]
+        if offenders:
+            defects.append({
+                "check": "missing-citation",
+                "severity": "warn",
+                "page": p["rel"],
+                "message": f"{len(offenders)} paragraph(s) without [^ref] citation",
+                "data": {"count": len(offenders)},
+            })
+    return defects
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="lint.py")
     parser.add_argument("wiki_root", type=Path)
@@ -247,6 +272,8 @@ def main() -> int:
         all_defects.extend(check_frontmatter(pages))
     if enabled("orphan"):
         all_defects.extend(check_orphans(pages, args.wiki_root))
+    if enabled("missing-citation"):
+        all_defects.extend(check_missing_citations(pages))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1
