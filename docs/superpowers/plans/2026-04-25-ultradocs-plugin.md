@@ -4,7 +4,7 @@
 
 **Goal:** Build v0.0.1 of the `ultradocs` Claude Code plugin: a markdown-wiki system with 4 skills (init, ingest, query, lint), 2 agents (curator, researcher), and a Python-stdlib lint script. Spec: `docs/superpowers/specs/2026-04-25-ultradocs-plugin-design.md`.
 
-**Architecture:** Skills-only interface. Each skill is a directory `skills/<name>/` containing `SKILL.md` with YAML front-matter + procedure. The `init` skill copies template files from `skills/init/templates/` into a target wiki path. The `lint` skill calls a Python stdlib script at `skills/lint/scripts/lint.py` that emits JSON defects. Agents (`agents/<name>.md`) define write vs read personas invoking these skills. Wiki folders: `refs/`, `topics/`, `overviews/`.
+**Architecture:** Skills-only interface. Each skill is a directory `skills/<name>/` containing `SKILL.md` with YAML front-matter + procedure. The `init` skill copies template files from `skills/init/templates/` into a target wiki path (substituting `{{wiki_name}}` in `root-README.md`). The `lint` skill calls a Python stdlib script at `skills/lint/scripts/lint.py` that emits JSON defects. Agents (`agents/<name>.md`) define write vs read personas invoking these skills. Wiki folders: `refs/`, `topics/`, `overviews/`.
 
 **Tech Stack:** Claude Code plugin (markdown + YAML). Python 3.11+ stdlib only for lint.py. `unittest` for lint tests. Git.
 
