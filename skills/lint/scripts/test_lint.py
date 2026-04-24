@@ -157,6 +157,23 @@ def test_extract_footnotes_ignores_definitions():
     assert refs == ["foo"], f"expected ['foo'], got {refs!r}"
 
 
+def test_broken_link_detected():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text(
+            "---\nid: a\ntype: topic\n---\n"
+            "See [missing](./missing.md)."
+        )
+        result = run([str(wiki)])
+        assert result.returncode == 1
+        out = json.loads(result.stdout)
+        checks = [d["check"] for d in out["defects"]]
+        assert "broken-link" in checks
+        assert out["summary"]["broken-link"] == 1
+
+
 # ---------------------------------------------------------------------------
 # unittest discovery shim — wraps all module-level test_* functions
 # ---------------------------------------------------------------------------

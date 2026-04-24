@@ -98,6 +98,29 @@ def walk_wiki(root: Path) -> list[dict]:
     return pages
 
 
+def check_broken_links(pages, wiki_root):
+    defects = []
+    for p in pages:
+        for target in p["links"]:
+            target_clean = target.split("#", 1)[0]
+            if not target_clean:
+                continue
+            resolved = (p["path"].parent / target_clean).resolve()
+            try:
+                resolved.relative_to(wiki_root.resolve())
+            except ValueError:
+                pass
+            if not resolved.exists():
+                defects.append({
+                    "check": "broken-link",
+                    "severity": "error",
+                    "page": p["rel"],
+                    "message": f"link target not found: {target}",
+                    "data": {"target": target},
+                })
+    return defects
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="lint.py")
     parser.add_argument("wiki_root", type=Path)
@@ -124,8 +147,20 @@ def main() -> int:
     }
     pages = walk_wiki(args.wiki_root)
     report["pages_scanned"] = len(pages)
+
+    only = set(filter(None, args.only.split(",")))
+    def enabled(name): return not only or name in only
+
+    all_defects = []
+    if enabled("broken-link"):
+        all_defects.extend(check_broken_links(pages, args.wiki_root))
+
+    for d in all_defects:
+        report["summary"][d["check"]] += 1
+    report["defects"] = all_defects
+
     print(json.dumps(report, indent=2))
-    return 0 if not report["defects"] else 1
+    return 0 if not all_defects else 1
 
 
 if __name__ == "__main__":
