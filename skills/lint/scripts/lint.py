@@ -8,6 +8,7 @@ import json
 import re
 import sys
 from collections import defaultdict
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 _FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", re.DOTALL)
@@ -208,6 +209,53 @@ def check_broken_links(pages, wiki_root):
     return defects
 
 
+STALE_DAYS = 90
+
+
+def check_stale(pages, wiki_root):
+    defects = []
+    today = date.today()
+    for p in pages:
+        if p["folder"] != "refs":
+            continue
+        fm = p["frontmatter"]
+        if fm.get("status") != "stable":
+            continue
+        try:
+            updated = datetime.strptime(fm.get("updated", ""), "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if (today - updated).days < STALE_DAYS:
+            continue
+        sources = fm.get("sources", [])
+        if not isinstance(sources, list):
+            continue
+        for src in sources:
+            if src.startswith(("http://", "https://")):
+                continue
+            if Path(src).is_absolute():
+                src_path = Path(src)
+            else:
+                # Try relative to ref file's directory first, then wiki root
+                candidate = (p["path"].parent / src).resolve()
+                if not candidate.exists():
+                    candidate = (wiki_root / src).resolve()
+                src_path = candidate
+            if not src_path.exists():
+                continue
+            src_mtime = datetime.fromtimestamp(src_path.stat().st_mtime).date()
+            if src_mtime > updated:
+                defects.append({
+                    "check": "stale",
+                    "severity": "warn",
+                    "page": p["rel"],
+                    "message": f"local source {src} modified after 'updated'",
+                    "data": {"source": str(src), "updated": fm["updated"]},
+                })
+                break
+    return defects
+
+
 def check_overview_underlinked(pages):
     defects = []
     for p in pages:
@@ -297,6 +345,8 @@ def main() -> int:
         all_defects.extend(check_missing_citations(pages))
     if enabled("overview-underlinked"):
         all_defects.extend(check_overview_underlinked(pages))
+    if enabled("stale"):
+        all_defects.extend(check_stale(pages, args.wiki_root))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1

@@ -251,6 +251,30 @@ def test_broken_link_detected():
         assert out["summary"]["broken-link"] == 1
 
 
+import os
+import time
+
+
+def test_stale_ref_detected():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        source = wiki / "source.pdf"
+        source.write_bytes(b"old")
+        # Set source mtime newer than updated; updated = 200 days ago
+        ref_path = wiki / "refs" / "r.md"
+        ref_path.write_text(
+            "---\nid: r\ntitle: R\ntype: ref\ncreated: 2024-01-01\n"
+            "updated: 2024-01-01\nsources: [./source.pdf]\nstatus: stable\n---\nbody"
+        )
+        # Ensure source mtime > updated (use current time, which is >> 2024-01-01)
+        os.utime(source, (time.time(), time.time()))
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        assert out["summary"]["stale"] >= 1
+
+
 def test_overview_underlinked():
     with tempfile.TemporaryDirectory() as d:
         wiki = Path(d)
