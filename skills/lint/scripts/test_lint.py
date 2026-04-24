@@ -157,6 +157,18 @@ def test_extract_footnotes_ignores_definitions():
     assert refs == ["foo"], f"expected ['foo'], got {refs!r}"
 
 
+def test_duplicate_id_detected():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text("---\nid: dup\ntype: topic\n---\nbody")
+        (wiki / "topics" / "b.md").write_text("---\nid: dup\ntype: topic\n---\nbody")
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        assert out["summary"]["duplicate-id"] >= 1
+
+
 def test_broken_link_detected():
     with tempfile.TemporaryDirectory() as d:
         wiki = Path(d)

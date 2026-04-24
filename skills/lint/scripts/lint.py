@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 _FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", re.DOTALL)
@@ -98,6 +99,25 @@ def walk_wiki(root: Path) -> list[dict]:
     return pages
 
 
+def check_duplicate_ids(pages):
+    by_id = defaultdict(list)
+    for p in pages:
+        if p["id"]:
+            by_id[p["id"]].append(p)
+    defects = []
+    for pid, group in by_id.items():
+        if len(group) > 1:
+            for p in group:
+                defects.append({
+                    "check": "duplicate-id",
+                    "severity": "error",
+                    "page": p["rel"],
+                    "message": f"duplicate id '{pid}' shared with {[g['rel'] for g in group if g is not p]}",
+                    "data": {"id": pid},
+                })
+    return defects
+
+
 def check_broken_links(pages, wiki_root):
     defects = []
     for p in pages:
@@ -154,6 +174,8 @@ def main() -> int:
     all_defects = []
     if enabled("broken-link"):
         all_defects.extend(check_broken_links(pages, args.wiki_root))
+    if enabled("duplicate-id"):
+        all_defects.extend(check_duplicate_ids(pages))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1
