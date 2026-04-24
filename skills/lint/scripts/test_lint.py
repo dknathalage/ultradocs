@@ -118,6 +118,46 @@ def test_walk_wiki_skips_claude_md_and_readme():
 
 
 # ---------------------------------------------------------------------------
+# Bug 1: extract_links must NOT match image syntax ![alt](path)
+# ---------------------------------------------------------------------------
+def test_extract_links_ignores_images():
+    body = "![diagram](images/diagram.png) and [link](docs/page.md)"
+    links = extract_links(body)
+    assert "images/diagram.png" not in links, "image paths must not appear in links"
+    assert "docs/page.md" in links
+
+
+# ---------------------------------------------------------------------------
+# Bug 2: front-matter regex must handle CRLF line endings
+# ---------------------------------------------------------------------------
+def test_parse_frontmatter_crlf():
+    md = "---\r\nid: bar\r\ntitle: Bar\r\ntype: topic\r\n---\r\nbody text"
+    fm, body = parse_frontmatter(md)
+    assert fm.get("id") == "bar", f"expected id=bar, got fm={fm!r}"
+    assert fm.get("type") == "topic"
+    assert "body text" in body
+
+
+# ---------------------------------------------------------------------------
+# Bug 3: URL values must survive front-matter parsing intact
+# ---------------------------------------------------------------------------
+def test_parse_frontmatter_url_value():
+    md = "---\nid: foo\ntype: ref\nsources: [https://example.com/path]\nlink: https://example.com\n---\nbody"
+    fm, _ = parse_frontmatter(md)
+    assert fm.get("sources") == ["https://example.com/path"], f"got {fm.get('sources')!r}"
+    assert fm.get("link") == "https://example.com", f"got {fm.get('link')!r}"
+
+
+# ---------------------------------------------------------------------------
+# Bug 4: extract_footnotes must NOT match footnote definitions [^ref]:
+# ---------------------------------------------------------------------------
+def test_extract_footnotes_ignores_definitions():
+    body = "See [^foo] for details.\n\n[^foo]: This is the definition."
+    refs = extract_footnotes(body)
+    assert refs == ["foo"], f"expected ['foo'], got {refs!r}"
+
+
+# ---------------------------------------------------------------------------
 # unittest discovery shim — wraps all module-level test_* functions
 # ---------------------------------------------------------------------------
 def load_tests(loader, tests, pattern):

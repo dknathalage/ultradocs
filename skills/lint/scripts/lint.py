@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-_FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
+_FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", re.DOTALL)
 
 
 def parse_frontmatter(text: str) -> tuple[dict, str]:
@@ -52,8 +52,8 @@ def _unquote(s: str) -> str:
     return s
 
 
-_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-_FOOTNOTE_REF_RE = re.compile(r"\[\^([\w-]+)\]")
+_LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+_FOOTNOTE_REF_RE = re.compile(r"\[\^([\w-]+)\](?!:)")
 
 
 def extract_links(body: str) -> list[str]:
