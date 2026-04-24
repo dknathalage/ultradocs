@@ -52,6 +52,52 @@ def _unquote(s: str) -> str:
     return s
 
 
+_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+_FOOTNOTE_REF_RE = re.compile(r"\[\^([\w-]+)\]")
+
+
+def extract_links(body: str) -> list[str]:
+    out = []
+    for target in _LINK_RE.findall(body):
+        if target.startswith(("http://", "https://", "mailto:")):
+            continue
+        if target.startswith("#"):
+            continue
+        out.append(target)
+    return out
+
+
+def extract_footnotes(body: str) -> list[str]:
+    return _FOOTNOTE_REF_RE.findall(body)
+
+
+_WIKI_FOLDERS = ("refs", "topics", "overviews")
+
+
+def walk_wiki(root: Path) -> list[dict]:
+    pages = []
+    for folder in _WIKI_FOLDERS:
+        fdir = root / folder
+        if not fdir.is_dir():
+            continue
+        for md in fdir.rglob("*.md"):
+            if md.name in ("CLAUDE.md", "README.md"):
+                continue
+            text = md.read_text(encoding="utf-8")
+            fm, body = parse_frontmatter(text)
+            pages.append({
+                "path": md,
+                "rel": str(md.relative_to(root)),
+                "folder": folder,
+                "id": fm.get("id", ""),
+                "frontmatter": fm,
+                "body": body,
+                "links": extract_links(body),
+                "footnotes": extract_footnotes(body),
+            })
+    return pages
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="lint.py")
     parser.add_argument("wiki_root", type=Path)
@@ -76,6 +122,8 @@ def main() -> int:
             "frontmatter-violation": 0,
         },
     }
+    pages = walk_wiki(args.wiki_root)
+    report["pages_scanned"] = len(pages)
     print(json.dumps(report, indent=2))
     return 0 if not report["defects"] else 1
 

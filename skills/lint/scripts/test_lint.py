@@ -33,7 +33,7 @@ def test_clean_empty_wiki_exits_zero():
         assert out["defects"] == []
 
 
-from lint import parse_frontmatter
+from lint import parse_frontmatter, walk_wiki, extract_links, extract_footnotes
 
 
 def test_parse_frontmatter_minimal():
@@ -81,6 +81,40 @@ sources: [https://example.com/a, ./local.pdf]
 body"""
     fm, _ = parse_frontmatter(md)
     assert fm["sources"] == ["https://example.com/a", "./local.pdf"]
+
+
+def test_extract_links_relative_only():
+    body = """
+    See [foo](../topics/foo.md) and [bar](./bar.md).
+    But not [external](https://example.com).
+    Nor [anchor](#heading).
+    """
+    links = extract_links(body)
+    assert "../topics/foo.md" in links
+    assert "./bar.md" in links
+    assert "https://example.com" not in links
+    assert "#heading" not in links
+
+
+def test_extract_footnotes():
+    body = "See [^foo] and [^bar-baz]."
+    assert extract_footnotes(body) == ["foo", "bar-baz"]
+
+
+def test_walk_wiki_skips_claude_md_and_readme():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        (wiki / "refs").mkdir()
+        (wiki / "topics").mkdir()
+        (wiki / "overviews").mkdir()
+        (wiki / "CLAUDE.md").write_text("# instr")
+        (wiki / "README.md").write_text("# readme")
+        (wiki / "refs" / "CLAUDE.md").write_text("# instr")
+        (wiki / "refs" / "a.md").write_text("---\nid: a\ntype: ref\n---\nbody")
+        (wiki / "topics" / "b.md").write_text("---\nid: b\ntype: topic\n---\nbody")
+        pages = walk_wiki(wiki)
+        ids = sorted(p["id"] for p in pages)
+        assert ids == ["a", "b"]
 
 
 # ---------------------------------------------------------------------------
