@@ -157,6 +157,50 @@ def test_extract_footnotes_ignores_definitions():
     assert refs == ["foo"], f"expected ['foo'], got {refs!r}"
 
 
+def test_frontmatter_missing_required_keys():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text("---\nid: a\n---\nbody")
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        assert out["summary"]["frontmatter-violation"] >= 1
+
+
+def test_sources_forbidden_on_topic():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text(
+            "---\nid: a\ntype: topic\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nsources: [https://x]\n"
+            "status: draft\ntitle: A\n---\nbody"
+        )
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        violations = [d for d in out["defects"]
+                      if d["check"] == "frontmatter-violation"]
+        assert any("sources" in v["message"] for v in violations)
+
+
+def test_type_must_match_folder():
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        (wiki / "topics" / "a.md").write_text(
+            "---\nid: a\ntitle: A\ntype: ref\ncreated: 2026-01-01\n"
+            "updated: 2026-01-01\nstatus: draft\n---\nbody"
+        )
+        result = run([str(wiki)])
+        out = json.loads(result.stdout)
+        violations = [d for d in out["defects"]
+                      if d["check"] == "frontmatter-violation"]
+        assert any("type" in v["message"] for v in violations)
+
+
 def test_duplicate_id_detected():
     with tempfile.TemporaryDirectory() as d:
         wiki = Path(d)

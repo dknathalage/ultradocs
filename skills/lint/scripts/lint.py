@@ -99,6 +99,51 @@ def walk_wiki(root: Path) -> list[dict]:
     return pages
 
 
+REQUIRED_KEYS = ("id", "title", "type", "created", "updated", "status")
+TYPE_PER_FOLDER = {"refs": "ref", "topics": "topic", "overviews": "overview"}
+
+
+def check_frontmatter(pages):
+    defects = []
+    for p in pages:
+        fm = p["frontmatter"]
+        for key in REQUIRED_KEYS:
+            if key not in fm or fm[key] == "":
+                defects.append({
+                    "check": "frontmatter-violation",
+                    "severity": "error",
+                    "page": p["rel"],
+                    "message": f"missing required key: {key}",
+                    "data": {"key": key},
+                })
+        expected_type = TYPE_PER_FOLDER[p["folder"]]
+        if fm.get("type") and fm["type"] != expected_type:
+            defects.append({
+                "check": "frontmatter-violation",
+                "severity": "error",
+                "page": p["rel"],
+                "message": f"type '{fm['type']}' does not match folder '{p['folder']}' (expected '{expected_type}')",
+                "data": {"type": fm.get("type"), "expected": expected_type},
+            })
+        if p["folder"] in ("topics", "overviews") and fm.get("sources"):
+            defects.append({
+                "check": "frontmatter-violation",
+                "severity": "error",
+                "page": p["rel"],
+                "message": "sources field is forbidden on topic/overview pages",
+                "data": {},
+            })
+        if p["folder"] == "refs" and not fm.get("sources"):
+            defects.append({
+                "check": "frontmatter-violation",
+                "severity": "error",
+                "page": p["rel"],
+                "message": "sources field is required on ref pages",
+                "data": {},
+            })
+    return defects
+
+
 def check_duplicate_ids(pages):
     by_id = defaultdict(list)
     for p in pages:
@@ -176,6 +221,8 @@ def main() -> int:
         all_defects.extend(check_broken_links(pages, args.wiki_root))
     if enabled("duplicate-id"):
         all_defects.extend(check_duplicate_ids(pages))
+    if enabled("frontmatter-violation"):
+        all_defects.extend(check_frontmatter(pages))
 
     for d in all_defects:
         report["summary"][d["check"]] += 1
