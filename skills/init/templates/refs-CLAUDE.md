@@ -20,7 +20,7 @@ status: stable
 
 # <title>
 
-1–3 paragraph summary.
+1–3 paragraph summary. Capture the key claims, methods, and conclusions.
 
 ## Key points
 
