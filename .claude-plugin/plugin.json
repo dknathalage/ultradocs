@@ -1,0 +1,9 @@
+{
+  "name": "ultradocs",
+  "description": "Second-brain style markdown wiki management using LLMs",
+  "version": "0.0.1",
+  "author": {
+    "name": "Don Athalage"
+  },
+  "keywords": ["wiki", "markdown", "second-brain", "notes"]
+}

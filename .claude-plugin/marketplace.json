@@ -1,0 +1,14 @@
+{
+  "name": "ultradocs",
+  "owner": {
+    "name": "Don Athalage"
+  },
+  "plugins": [
+    {
+      "name": "ultradocs",
+      "source": "./",
+      "description": "Second-brain style markdown wiki management using LLMs",
+      "version": "0.0.1"
+    }
+  ]
+}
