@@ -315,6 +315,47 @@ def test_missing_citation_in_topic():
         assert out["summary"]["missing-citation"] >= 1
 
 
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_clean_fixture_has_zero_defects():
+    result = run([str(FIXTURES / "clean")])
+    out = json.loads(result.stdout)
+    assert out["defects"] == [], out["defects"]
+    assert result.returncode == 0
+
+
+def test_seeded_fixture_detects_defects():
+    result = run([str(FIXTURES / "seeded")])
+    out = json.loads(result.stdout)
+    s = out["summary"]
+    # 9 total seeded defects: 3 orphan + 2 broken-link + 2 missing-citation
+    # + (2 pages from duplicate-id pair) + 1 overview-underlinked
+    assert s["orphan"] == 3
+    assert s["broken-link"] == 2
+    assert s["missing-citation"] == 2
+    assert s["duplicate-id"] == 2   # both pages flagged
+    assert s["overview-underlinked"] == 1
+    assert result.returncode == 1
+
+
+def test_lint_runs_under_one_second_on_100_pages():
+    import time as _t
+    with tempfile.TemporaryDirectory() as d:
+        wiki = Path(d)
+        for f in ("refs", "topics", "overviews"):
+            (wiki / f).mkdir()
+        for i in range(100):
+            (wiki / "topics" / f"t{i}.md").write_text(
+                "---\nid: t{i}\ntitle: T\ntype: topic\ncreated: 2026-01-01\n"
+                "updated: 2026-01-01\nstatus: draft\n---\nbody[^r]\n[^r]: see"
+                .replace("{i}", str(i))
+            )
+        start = _t.perf_counter()
+        run([str(wiki)])
+        assert _t.perf_counter() - start < 1.0
+
+
 # ---------------------------------------------------------------------------
 # unittest discovery shim — wraps all module-level test_* functions
 # ---------------------------------------------------------------------------
