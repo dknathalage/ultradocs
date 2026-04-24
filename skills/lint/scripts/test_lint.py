@@ -33,6 +33,56 @@ def test_clean_empty_wiki_exits_zero():
         assert out["defects"] == []
 
 
+from lint import parse_frontmatter
+
+
+def test_parse_frontmatter_minimal():
+    md = """---
+id: foo
+title: Foo
+type: topic
+created: 2026-04-25
+updated: 2026-04-25
+tags: [a, b]
+status: draft
+---
+
+body"""
+    fm, body = parse_frontmatter(md)
+    assert fm["id"] == "foo"
+    assert fm["type"] == "topic"
+    assert fm["tags"] == ["a", "b"]
+    assert body.strip() == "body"
+
+
+def test_parse_frontmatter_missing_returns_empty():
+    fm, body = parse_frontmatter("no front-matter here")
+    assert fm == {}
+    assert body == "no front-matter here"
+
+
+def test_parse_frontmatter_quoted_string():
+    md = """---
+id: foo
+title: "Foo: the musical"
+type: ref
+---
+body"""
+    fm, _ = parse_frontmatter(md)
+    assert fm["title"] == "Foo: the musical"
+
+
+def test_parse_frontmatter_sources_list():
+    md = """---
+id: foo
+type: ref
+sources: [https://example.com/a, ./local.pdf]
+---
+body"""
+    fm, _ = parse_frontmatter(md)
+    assert fm["sources"] == ["https://example.com/a", "./local.pdf"]
+
+
 # ---------------------------------------------------------------------------
 # unittest discovery shim — wraps all module-level test_* functions
 # ---------------------------------------------------------------------------
