@@ -36,16 +36,9 @@ jobs:
             ci
             style
             revert
-          # Optional scopes recap from CLAUDE.md.
-          scopes: |
-            init
-            ingest
-            query
-            lint
-            agents
-            spec
-            plan
-            ci
+          # Scope is optional and not restricted to an allowlist — release-please
+          # uses scope=<branch> (e.g. "chore(main): release 0.1.0") and contributors
+          # may legitimately introduce new scopes. CLAUDE.md lists suggested scopes.
           requireScope: false
           subjectPattern: ^[A-Za-z0-9].+$
           subjectPatternError: |
