@@ -6,7 +6,10 @@
   "plugins": [
     {
       "name": "ultradocs",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "dknathalage/ultradocs"
+      },
       "description": "Second-brain style markdown wiki management using LLMs",
       "version": "0.1.2"
     }
