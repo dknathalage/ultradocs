@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/dknathalage/ultradocs/compare/v0.1.0...v0.1.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **ci:** parse release-please PR JSON at run-time ([#10](https://github.com/dknathalage/ultradocs/issues/10)) ([c36e0d8](https://github.com/dknathalage/ultradocs/commit/c36e0d8cc305b788d14c5ba64c537173735d5b70))
+
 ## [0.1.0](https://github.com/dknathalage/ultradocs/compare/v0.0.1...v0.1.0) (2026-04-25)
 
 
