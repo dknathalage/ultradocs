@@ -19,13 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Mint a short-lived (~1h) installation token from the
-      # dknathalage-release-bot GitHub App. Two reasons we use the App
-      # token instead of GITHUB_TOKEN:
-      #   1. PRs / commits made with GITHUB_TOKEN do not trigger other
-      #      workflows. The App token is a separate identity, so the
-      #      release PR DOES get CI runs.
-      #   2. We add the App as a bypass actor on main's branch protection
-      #      so it can merge the release PR without needing a human review.
+      # dknathalage-release-bot GitHub App. We use the App token instead
+      # of GITHUB_TOKEN because PRs / commits made with GITHUB_TOKEN do
+      # not trigger other workflows. The App token is a separate
+      # identity, so the release PR DOES get CI runs.
       - name: mint app token
         id: app-token
         uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.11.0
@@ -37,29 +34,12 @@ jobs:
       # writes CHANGELOG based on conventional commits since the last tag
       # (feat -> minor, fix -> patch, BREAKING CHANGE / feat! -> major;
       # pre-1.0 caps majors to minor via bump-minor-pre-major).
-      # When the release PR is merged, this same workflow runs again
-      # (because the merge is a push to main) and creates the tag.
+      # The maintainer reviews and merges the release PR by hand. When
+      # the PR merges, this workflow runs again (the merge is a push to
+      # main) and release-please creates the tag + GitHub Release.
       - name: run release-please
-        id: release
         uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 # v4.1.3
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           token: ${{ steps.app-token.outputs.token }}
-
-      # Enable auto-merge on the release PR if one was created/updated.
-      # The PR will merge itself once required status checks pass; the
-      # App is a bypass actor for code-owner review.
-      - name: enable auto-merge on release PR
-        if: ${{ steps.release.outputs.pr }}
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          # PR JSON is parsed at run-time (not via fromJson at template
-          # expansion) so an empty value when no PR is created cannot
-          # break workflow parsing.
-          PR_JSON: ${{ steps.release.outputs.pr }}
-          REPO: ${{ github.repository }}
-        run: |
-          PR_NUMBER=$(printf '%s' "$PR_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')
-          echo "Enabling auto-merge on PR #$PR_NUMBER"
-          gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash

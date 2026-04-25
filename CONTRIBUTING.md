@@ -74,17 +74,15 @@ Pre-1.0 we cap major bumps to minor (see `bump-minor-pre-major` in `release-plea
 
 ## Releases
 
-Releases are fully automated via [`release-please`](https://github.com/googleapis/release-please) and the `dknathalage-release-bot` GitHub App. There are **no manual steps** for the maintainer once a `feat:` / `fix:` lands on `main`.
+Releases are automated via [`release-please`](https://github.com/googleapis/release-please) and the `dknathalage-release-bot` GitHub App. One manual step per release: the maintainer merges the release PR.
 
-1. Conventional commits land on `main` (via reviewed PR — that part is still gated).
+1. Conventional commits land on `main` (via reviewed PR).
 2. The push to `main` triggers `.github/workflows/release-please.yml`. The workflow:
    - mints a short-lived (~1h) installation token from the App,
-   - asks `release-please` to open / update a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, writes/updates `CHANGELOG.md`, and bumps `.release-please-manifest.json`,
-   - enables auto-merge (squash) on the release PR.
-3. Required status checks run on the release PR (the App identity triggers them, unlike `GITHUB_TOKEN`). When they pass, GitHub auto-merges.
-4. The merge to `main` re-runs the workflow, which detects the release commit and creates the Git tag (`vX.Y.Z`) plus a GitHub Release.
-
-The App is a **bypass actor for code-owner review**. It does **not** bypass required status checks — those still gate every release.
+   - asks `release-please` to open / update a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, writes/updates `CHANGELOG.md`, and bumps `.release-please-manifest.json`.
+3. Required status checks run on the release PR (the App identity triggers them, unlike `GITHUB_TOKEN`).
+4. The maintainer reviews the changelog and merges the release PR.
+5. The merge to `main` re-runs the workflow, which detects the release commit and creates the Git tag (`vX.Y.Z`) plus a GitHub Release.
 
 You should never bump versions, tag, or write the changelog by hand. The changelog is whatever the conventional commits produce — curate by writing better commit messages.
 
