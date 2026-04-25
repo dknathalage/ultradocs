@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/dknathalage/ultradocs/compare/v0.1.2...v1.0.0) (2026-04-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **marketplace:** marketplace source changed from local path to github repo `dknathalage/ultradocs`.
+
+### Features
+
+* **marketplace:** point source at github repo instead of local path ([#16](https://github.com/dknathalage/ultradocs/issues/16)) ([5bb7a70](https://github.com/dknathalage/ultradocs/commit/5bb7a70dba5d264b5c677e1ac36e55fcf84f6609))
+
 ## [0.1.2](https://github.com/dknathalage/ultradocs/compare/v0.1.1...v0.1.2) (2026-04-25)
 
 
