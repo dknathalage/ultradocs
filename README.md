@@ -103,7 +103,7 @@ Claude: [runs lint.py, reports orphans and broken links, offers safe auto-fixes]
 
 ## Status
 
-`v0.0.1` — initial release. Claude-only AI instructions; broader agent support (AGENTS.md, GEMINI.md) planned.
+See [`CHANGELOG.md`](./CHANGELOG.md) for the current version and release history. Claude-only AI instructions; broader agent support (AGENTS.md, GEMINI.md) planned.
 
 ## License
 
