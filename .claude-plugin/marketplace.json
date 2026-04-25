@@ -11,7 +11,7 @@
         "repo": "dknathalage/ultradocs"
       },
       "description": "Second-brain style markdown wiki management using LLMs",
-      "version": "0.1.2"
+      "version": "1.0.0"
     }
   ]
 }
