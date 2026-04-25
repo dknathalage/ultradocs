@@ -8,7 +8,7 @@
       "name": "ultradocs",
       "source": "./",
       "description": "Second-brain style markdown wiki management using LLMs",
-      "version": "0.0.1"
+      "version": "0.1.0"
     }
   ]
 }
