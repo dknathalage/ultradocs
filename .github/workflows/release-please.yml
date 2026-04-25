@@ -54,8 +54,12 @@ jobs:
         if: ${{ steps.release.outputs.pr }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PR_NUMBER: ${{ fromJson(steps.release.outputs.pr).number }}
+          # PR JSON is parsed at run-time (not via fromJson at template
+          # expansion) so an empty value when no PR is created cannot
+          # break workflow parsing.
+          PR_JSON: ${{ steps.release.outputs.pr }}
           REPO: ${{ github.repository }}
         run: |
+          PR_NUMBER=$(printf '%s' "$PR_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')
           echo "Enabling auto-merge on PR #$PR_NUMBER"
           gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash
