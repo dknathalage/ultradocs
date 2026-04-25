@@ -144,13 +144,14 @@ One logical change per commit. Tests in the same commit as the code they test (T
 
 ## Releasing
 
-Automated via `release-please` (see `.github/workflows/release-please.yml`), but **manually dispatched** — only `@dknathalage` may trigger it. Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
+Fully automated via `release-please` and the `dknathalage-release-bot` GitHub App. Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
 
 1. Land conventional-commit PRs on `main`. `feat:` → minor bump, `fix:` → patch bump, `feat!:` / `BREAKING CHANGE:` → major (capped to minor while pre-1.0).
-2. When ready to cut a release, dispatch the workflow: `gh workflow run release-please.yml` (or via Actions UI → release-please → Run workflow).
-3. `release-please` opens a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and updates `.release-please-manifest.json`.
-4. Before approving the release PR, smoke-test `init`, `ingest`, `query`, `lint` against a scratch wiki and confirm `python3 -m unittest test_lint.py -v` is green (CI does this, but verify locally on big releases).
-5. Merge the release PR. The workflow then pushes the tag (`vX.Y.Z`) and publishes the GitHub Release automatically.
+2. The push to `main` triggers `.github/workflows/release-please.yml`. The workflow mints a short-lived App token, opens (or updates) a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and updates `.release-please-manifest.json`.
+3. The same workflow enables auto-merge on the release PR. Required status checks run (the App identity triggers them, unlike GITHUB_TOKEN); when they pass, GitHub squash-merges the PR. The App bypasses the code-owner review requirement; it does **not** bypass status checks.
+4. The merge is itself a push to `main`, so the workflow runs again — release-please detects the merged release commit and creates the tag (`vX.Y.Z`) plus a GitHub Release.
+
+Net: zero manual steps after a `feat:` / `fix:` lands on `main`. The changelog is whatever the conventional-commit history produces — curate by writing better commit messages.
 
 ---
 

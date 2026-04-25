@@ -2,3 +2,10 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Secrets — never commit. Belongs in ~/.secure/ or a secret manager.
+*.pem
+*.key
+.env
+.env.*
+!.env.example
