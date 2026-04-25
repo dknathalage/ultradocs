@@ -1,0 +1,82 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  manifests:
+    name: plugin manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: validate plugin.json
+        run: python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
+
+      - name: validate marketplace.json
+        run: python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
+
+  skills-frontmatter:
+    name: skill front-matter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: every SKILL.md has name + description
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r f; do
+            head=$(awk 'BEGIN{n=0} /^---$/{n++; next} n==1{print} n==2{exit}' "$f")
+            if ! grep -q '^name:' <<<"$head"; then
+              echo "::error file=$f::missing 'name' in front-matter"
+              fail=1
+            fi
+            if ! grep -q '^description:' <<<"$head"; then
+              echo "::error file=$f::missing 'description' in front-matter"
+              fail=1
+            fi
+            if grep -qE '^description:.*"/[a-z]' <<<"$head"; then
+              echo "::error file=$f::description must use natural language, not slash-command syntax (e.g. \"/ultradocs init\")"
+              fail=1
+            fi
+          done < <(find skills -name SKILL.md)
+          exit $fail
+
+  no-binaries:
+    name: no unexpected binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: reject binaries outside fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=$(find . -type f \
+            -not -path './.git/*' \
+            -not -path './skills/lint/scripts/fixtures/*' \
+            -not -path './skills/lint/scripts/__pycache__/*' \
+            -size +500k 2>/dev/null || true)
+          if [ -n "$bad" ]; then
+            echo "::error::large files detected:"
+            echo "$bad"
+            exit 1
+          fi
