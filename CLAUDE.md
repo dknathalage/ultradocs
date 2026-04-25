@@ -144,12 +144,13 @@ One logical change per commit. Tests in the same commit as the code they test (T
 
 ## Releasing
 
-Automated via `release-please` (see `.github/workflows/release-please.yml`). Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
+Automated via `release-please` (see `.github/workflows/release-please.yml`), but **manually dispatched** — only `@dknathalage` may trigger it. Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
 
 1. Land conventional-commit PRs on `main`. `feat:` → minor bump, `fix:` → patch bump, `feat!:` / `BREAKING CHANGE:` → major (capped to minor while pre-1.0).
-2. `release-please` opens a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and updates `.release-please-manifest.json`.
-3. Before approving the release PR, smoke-test `init`, `ingest`, `query`, `lint` against a scratch wiki and confirm `python3 -m unittest test_lint.py -v` is green (CI does this, but verify locally on big releases).
-4. Merge the release PR. The workflow then pushes the tag (`vX.Y.Z`) and publishes the GitHub Release automatically.
+2. When ready to cut a release, dispatch the workflow: `gh workflow run release-please.yml` (or via Actions UI → release-please → Run workflow).
+3. `release-please` opens a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and updates `.release-please-manifest.json`.
+4. Before approving the release PR, smoke-test `init`, `ingest`, `query`, `lint` against a scratch wiki and confirm `python3 -m unittest test_lint.py -v` is green (CI does this, but verify locally on big releases).
+5. Merge the release PR. The workflow then pushes the tag (`vX.Y.Z`) and publishes the GitHub Release automatically.
 
 ---
 
