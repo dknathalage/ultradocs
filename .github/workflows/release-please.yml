@@ -1,8 +1,7 @@
 name: release-please
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,13 +16,27 @@ jobs:
     name: release-please
     runs-on: ubuntu-latest
     steps:
-      # On every push to main, release-please:
-      #   * opens / updates a "release PR" that bumps version + writes CHANGELOG
-      #     based on conventional commits since the last tag (feat -> minor,
-      #     fix -> patch, BREAKING CHANGE / feat! -> major; pre-1.0 caps majors
-      #     to minor bumps via bump-minor-pre-major).
-      #   * when that release PR is merged, creates a Git tag (vX.Y.Z) and a
-      #     GitHub Release.
+      # Manual-only release. Two layers of access control:
+      #   1. workflow_dispatch already requires write access on the repo, so
+      #      drive-by users can't trigger this.
+      #   2. The guard below pins the dispatcher to a single GitHub username.
+      #      `github.actor` is interpolated via env var (not directly into
+      #      shell) to neutralise any future username escaping changes.
+      - name: enforce dispatcher identity
+        env:
+          ACTOR: ${{ github.actor }}
+          ALLOWED: dknathalage
+        run: |
+          if [ "$ACTOR" != "$ALLOWED" ]; then
+            echo "::error::Only @$ALLOWED may dispatch release-please. Got: $ACTOR"
+            exit 1
+          fi
+
+      # release-please opens / updates a release PR that bumps version + writes
+      # CHANGELOG based on conventional commits since the last tag (feat -> minor,
+      # fix -> patch, BREAKING CHANGE / feat! -> major; pre-1.0 caps majors to
+      # minor bumps via bump-minor-pre-major). When that release PR is merged,
+      # the action creates a Git tag (vX.Y.Z) and a GitHub Release.
       - uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 # v4.1.3
         with:
           config-file: release-please-config.json
