@@ -144,14 +144,14 @@ One logical change per commit. Tests in the same commit as the code they test (T
 
 ## Releasing
 
-Fully automated via `release-please` and the `dknathalage-release-bot` GitHub App. Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
+Automated via `release-please` (using the `dknathalage-release-bot` GitHub App for token minting). Do not bump `version`, write `CHANGELOG.md`, or create tags by hand.
 
 1. Land conventional-commit PRs on `main`. `feat:` → minor bump, `fix:` → patch bump, `feat!:` / `BREAKING CHANGE:` → major (capped to minor while pre-1.0).
-2. The push to `main` triggers `.github/workflows/release-please.yml`. The workflow mints a short-lived App token, opens (or updates) a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and updates `.release-please-manifest.json`.
-3. The same workflow enables auto-merge on the release PR. Required status checks run (the App identity triggers them, unlike GITHUB_TOKEN); when they pass, GitHub squash-merges the PR. The App bypasses the code-owner review requirement; it does **not** bypass status checks.
-4. The merge is itself a push to `main`, so the workflow runs again — release-please detects the merged release commit and creates the tag (`vX.Y.Z`) plus a GitHub Release.
+2. The push to `main` triggers `.github/workflows/release-please.yml`. The workflow mints a short-lived App token and asks `release-please` to open (or update) a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, updates `CHANGELOG.md`, and bumps `.release-please-manifest.json`.
+3. Required status checks run on the release PR (the App identity triggers them, unlike `GITHUB_TOKEN`).
+4. The maintainer reviews the changelog and merges the release PR. The merge is a push to `main`, so the workflow runs again — release-please detects the release commit and creates the tag (`vX.Y.Z`) plus a GitHub Release.
 
-Net: zero manual steps after a `feat:` / `fix:` lands on `main`. The changelog is whatever the conventional-commit history produces — curate by writing better commit messages.
+One manual step per release: merging the release PR.
 
 ---
 
