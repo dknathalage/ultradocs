@@ -74,18 +74,19 @@ Pre-1.0 we cap major bumps to minor (see `bump-minor-pre-major` in `release-plea
 
 ## Releases
 
-Releases are automated via [`release-please`](https://github.com/googleapis/release-please) but **manually dispatched** — only the maintainer (`@dknathalage`) may trigger the workflow.
+Releases are fully automated via [`release-please`](https://github.com/googleapis/release-please) and the `dknathalage-release-bot` GitHub App. There are **no manual steps** for the maintainer once a `feat:` / `fix:` lands on `main`.
 
-1. Conventional commits land on `main` (via PR).
-2. The maintainer dispatches the workflow when they want to cut a release: Actions → `release-please` → "Run workflow", or `gh workflow run release-please.yml`. Other users dispatching are rejected by an identity guard in the job.
-3. `release-please.yml` opens (or updates) a **release PR** that:
-   - bumps `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`
-   - writes/updates `CHANGELOG.md`
-   - bumps `.release-please-manifest.json`
-4. A maintainer reviews and merges the release PR.
-5. On merge, the workflow creates the Git tag (`vX.Y.Z`) and a GitHub Release.
+1. Conventional commits land on `main` (via reviewed PR — that part is still gated).
+2. The push to `main` triggers `.github/workflows/release-please.yml`. The workflow:
+   - mints a short-lived (~1h) installation token from the App,
+   - asks `release-please` to open / update a release PR that bumps `version` in `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`, writes/updates `CHANGELOG.md`, and bumps `.release-please-manifest.json`,
+   - enables auto-merge (squash) on the release PR.
+3. Required status checks run on the release PR (the App identity triggers them, unlike `GITHUB_TOKEN`). When they pass, GitHub auto-merges.
+4. The merge to `main` re-runs the workflow, which detects the release commit and creates the Git tag (`vX.Y.Z`) plus a GitHub Release.
 
-You should never bump versions, tag, or write the changelog by hand. If you need to, that's a sign of drift — open an issue first.
+The App is a **bypass actor for code-owner review**. It does **not** bypass required status checks — those still gate every release.
+
+You should never bump versions, tag, or write the changelog by hand. The changelog is whatever the conventional commits produce — curate by writing better commit messages.
 
 ## Review
 
