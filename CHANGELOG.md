@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/dknathalage/ultradocs/compare/v0.1.1...v0.1.2) (2026-04-25)
+
+
+### Bug Fixes
+
+* **docs:** point README status to CHANGELOG instead of stale v0.0.1 ([#13](https://github.com/dknathalage/ultradocs/issues/13)) ([1decddc](https://github.com/dknathalage/ultradocs/commit/1decddc888ba41ddef34be84479e1a86448fda07))
+
 ## [0.1.1](https://github.com/dknathalage/ultradocs/compare/v0.1.0...v0.1.1) (2026-04-25)
 
 
